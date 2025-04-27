@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock
 from telegram import Update
-import app.bots.telegram_bot as telegram_bot
+from app.bots.telegram.commands.start import start
 
 class DummyUser:
     def __init__(self, user_id=123456):
@@ -22,7 +22,7 @@ async def test_start_command():
     dummy_context = AsyncMock()
 
     # Call /start handler
-    await telegram_bot.start(dummy_update, dummy_context)
+    await start(dummy_update, dummy_context)
 
     # Assert that the bot sent any non-empty welcome message
     assert dummy_message.sent_texts, "No message was sent"

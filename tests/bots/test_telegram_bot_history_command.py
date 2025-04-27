@@ -1,7 +1,8 @@
 import pytest
 from unittest.mock import AsyncMock, patch
 from telegram import Update
-import app.bots.telegram_bot as telegram_bot
+
+from app.bots.telegram.commands.history import history
 
 class DummyUser:
     def __init__(self, user_id=123456):
@@ -10,10 +11,13 @@ class DummyUser:
 class DummyMessage:
     def __init__(self):
         self.sent_texts = []
+        self.reply_markups = []
         self.from_user = DummyUser()
+        self.effective_user = self.from_user
 
     async def reply_text(self, text, **kwargs):
         self.sent_texts.append(text)
+        self.reply_markups.append(kwargs.get('reply_markup'))
 
 class DummyDatetime:
     def __init__(self, date_str):
@@ -23,7 +27,7 @@ class DummyDatetime:
         return self.date_str
 
 @pytest.mark.asyncio
-@patch('app.bots.telegram_bot.get_user_history')
+@patch('app.bots.telegram.commands.history.get_user_history')
 async def test_history_with_records(mock_get_user_history):
     # Mock user history with two articles
     mock_get_user_history.return_value = [
@@ -44,15 +48,19 @@ async def test_history_with_records(mock_get_user_history):
     dummy_context = AsyncMock()
 
     # Call /history handler
-    await telegram_bot.history(dummy_update, dummy_context)
+    await history(dummy_update, dummy_context)
 
     # Assert that response includes article titles
-    assert "Your recent articles" in dummy_message.sent_texts[-1]
-    assert "AI Innovations" in dummy_message.sent_texts[-1]
-    assert "Blockchain" in dummy_message.sent_texts[-1]
+    assert "Here are your recent topics" in dummy_message.sent_texts[-1]
+
+    buttons = dummy_message.reply_markups[-1].inline_keyboard  # list of lists
+    button_texts = [btn.text for row in buttons for btn in row]
+
+    assert "AI Innovations" in button_texts
+    assert "Blockchain" in button_texts
 
 @pytest.mark.asyncio
-@patch('app.bots.telegram_bot.get_user_history')
+@patch('app.bots.telegram.commands.history.get_user_history')
 async def test_history_without_records(mock_get_user_history):
     # Mock empty history for user
     mock_get_user_history.return_value = []
@@ -61,8 +69,7 @@ async def test_history_without_records(mock_get_user_history):
     dummy_update = Update(update_id=5678, message=dummy_message)
     dummy_context = AsyncMock()
 
-    # Call /history handler
-    await telegram_bot.history(dummy_update, dummy_context)
+    await history(dummy_update, dummy_context)
 
     # Assert that the bot informs no history is found
     assert "No history found yet" in dummy_message.sent_texts[-1]
