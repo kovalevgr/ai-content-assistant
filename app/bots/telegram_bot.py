@@ -5,6 +5,7 @@ from app.agents.topic_aggregator import search_articles_by_topic
 from app.agents.rss_aggregator import fetch_rss_articles
 from app.agents.summarizer import summarize_articles
 from app.agents.rewriter import rewrite_text
+from app.db.crud import save_article_history
 
 import os
 from dotenv import load_dotenv
@@ -90,6 +91,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"📝 Here’s a *{chosen_style.title()}* style article for *{topic}*:\n\n{rewritten_summary}",
             parse_mode="Markdown"
+        )
+
+        # ➔ Save history in the database
+        save_article_history(
+            user_id=user_id,
+            topic=topic,
+            style=chosen_style,
+            result=rewritten_summary
         )
 
         user_states.pop(user_id, None)

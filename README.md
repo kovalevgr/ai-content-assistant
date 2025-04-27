@@ -1,163 +1,89 @@
 
-# AI Content Assistant 🤖✍️
+# AI Content Assistant
 
-An AI-powered Telegram bot for aggregating, summarizing, rewriting, and assisting in posting news articles in a personalized style.
+Your personal AI content assistant that helps you:
 
----
-
-## 🚀 Solution Overview
-
-**Goal:**  
-Create an AI Content Assistant that automates news aggregation from trusted sources (via RSS), allows custom topic searches, summarizes the content, rewrites it in a custom style, and assists in publishing.
-
-**Key Features:**
-- Aggregate latest news articles via predefined RSS feeds.
-- Allow users to specify custom topics for article search.
-- Summarize and rewrite articles using OpenAI API.
-- Store user search topics for reuse.
-- Fully test-covered codebase.
-- Modular agent-based architecture for easy extension.
+- Find real articles based on your custom topics (via RSS feeds)
+- Summarize multiple articles into one
+- Rewrite the content into different styles (Professional, Casual, Emotional, Technical)
+- Save your article generation history in a PostgreSQL database
+- Operate via a friendly Telegram bot
 
 ---
 
-## 🧠 System Architecture
-
-```plaintext
-[Telegram Bot]
-    |
-    |--- /top_news → [RSS Aggregator Agent]
-    |        |
-    |     [Fetch latest news from RSS sources]
-    |
-    |--- /custom_topic → [Topic Search Agent] (coming soon)
-    |        |
-    |     [Find articles related to user input]
-    |
-    ↓
-[Summarizer Agent] → [Style Rewriter Agent] → [Return result to user]
-```
-
-> Agents are isolated modules that perform a specific task (parsing, summarizing, rewriting, etc.)
-
----
-
-## 🛠️ Project Structure
+## 🛠 Project Structure
 
 ```
 /app
-  /bots             # Telegram bot logic
-  /agents           # Business logic agents (RSS aggregator, summarizer, etc.)
-  /services         # External service wrappers (e.g., OpenAI API)
-  /models           # Data models (topics, sources)
-config.py
-/tests
-  /bots             # Bot tests
-  /agents           # Agents tests
-  /services         # Services tests
-main.py             # Entry point
-requirements.txt    # Production dependencies
-requirements-dev.txt # Development dependencies
-.env                # Environment variables (not versioned)
-.gitignore
-README.md
+  /agents         # AI-related agents (aggregator, summarizer, rewriter)
+  /bots           # Telegram bot logic
+  /db             # Database connection and CRUD operations
+  /models         # Database models (SQLAlchemy)
+  /scripts        # Helper scripts (e.g., database initialization)
+/docker
+  docker-compose.dev.yml   # Docker Compose for development
+  docker-compose.prod.yml  # Docker Compose for production
 ```
 
 ---
 
-## 🛠️ Setup Instructions
+## 🚀 Features
 
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/yourusername/ai-content-assistant.git
-cd ai-content-assistant
-```
-
-### 2. Create and activate a virtual environment
-
-```bash
-python -m venv venv
-source venv/bin/activate  # Mac/Linux
-.env\Scriptsctivate   # Windows
-```
-
-### 3. Install dependencies
-
-- For production:
-
-```bash
-pip install -r requirements.txt
-```
-
-- For development:
-
-```bash
-pip install -r requirements-dev.txt
-```
+| Feature | Status |
+|:--------|:-------|
+| Find articles by topic (RSS feeds) | ✅ |
+| Summarize articles with OpenAI | ✅ |
+| Rewrite content in various styles | ✅ |
+| Save request history (PostgreSQL) | ✅ |
+| Dockerized setup (Dev/Prod) | ✅ |
+| Unit-tested core flows | ✅ |
 
 ---
 
-## 🔑 Environment Variables
+## ⚙️ How to Run
 
-Create a `.env` file in the root folder:
-
-```dotenv
-TELEGRAM_TOKEN=your-telegram-bot-token
-OPENAI_API_KEY=your-openai-api-key
-```
-
----
-
-## 🚀 Running the Project
-
-### Development Mode (local testing)
+### Local Development
 
 ```bash
+docker-compose -f docker-compose.dev.yml up -d
+python scripts/init_db.py
 python main.py
 ```
 
-It will start the Telegram bot locally and respond to commands.
-
-### Production Mode (for server / deployment)
-
-- Setup your environment (virtual machine, App Service, etc.)
-- Install only production dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-- Ensure environment variables are set (or .env file present)
-- Run:
-
-```bash
-python main.py
-```
-
-*(In production, you can also use process managers like `pm2`, `supervisord`, or dockerize it.)*
+> Ensure you have a `.env` file with necessary environment variables:
+>
+> - OPENAI_API_KEY
+> - OPENAI_MODEL
+> - OPENAI_TEMPERATURE
+> - OPENAI_MAX_TOKENS
+> - POSTGRES_USER
+> - POSTGRES_PASSWORD
+> - POSTGRES_DB
+> - POSTGRES_HOST
+> - POSTGRES_PORT
 
 ---
 
-## 🧪 Running Tests
+### Production
+
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+Make sure the production environment has all required environment variables set.
+
+---
+
+## ✅ How to Test
 
 ```bash
 pytest
 ```
 
-Tests cover core functionality (bots and agents) and are isolated with mocks.
+Unit tests mock external services and database interactions to ensure isolated, fast, and reliable tests.
 
 ---
 
-## 📚 Future Improvements
+## 📄 License
 
-- Implement CrewAI/Agent-based dynamic action planning.
-- Auto-posting to social networks.
-- Admin panel to manage RSS sources and user topics.
-- Deployment via Docker / Azure App Service.
-
----
-
-## 👨‍💻 Author
-
-Crafted with ❤️ by [your name or GitHub link].
-
----
+MIT License.
