@@ -5,7 +5,7 @@ from app.agents.topic_aggregator import search_articles_by_topic
 from app.agents.rss_aggregator import fetch_rss_articles
 from app.agents.summarizer import summarize_articles
 from app.agents.rewriter import rewrite_text
-from app.db.crud import save_article_history
+from app.db.crud import save_article_history, get_user_history
 
 import os
 from dotenv import load_dotenv
@@ -38,6 +38,20 @@ async def custom_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def topics(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("📚 Ось твої попередні теми (поки ще порожньо)")
+
+async def history(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    records = get_user_history(user_id)
+
+    if not records:
+        await update.message.reply_text("📭 No history found yet.")
+        return
+
+    message = "📝 Your recent articles:\n\n"
+    for record in records:
+        message += f"• *{record.topic}* ({record.style.title()}) - {record.created_at.strftime('%Y-%m-%d')}\n"
+
+    await update.message.reply_text(message, parse_mode="Markdown")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -126,6 +140,7 @@ def run_bot():
     app.add_handler(CommandHandler("top_news", top_news))
     app.add_handler(CommandHandler("custom_topic", custom_topic))
     app.add_handler(CommandHandler("topics", topics))
+    app.add_handler(CommandHandler("history", history))
 
     # Handlers
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))

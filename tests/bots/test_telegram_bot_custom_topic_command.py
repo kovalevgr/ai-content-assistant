@@ -24,35 +24,6 @@ class DummyContext:
     kwargs = {}
 
 @pytest.mark.asyncio
-async def test_start():
-    dummy_message = DummyMessage()
-    dummy_update = Update(update_id=1234, message=dummy_message)
-    dummy_context = DummyContext()
-
-    await telegram_bot.start(dummy_update, dummy_context)
-
-    assert dummy_message.text.startswith("Привіт! Я твій AI Content Assistant"), \
-        f"Очікуваний текст не знайдено. Отримано: {dummy_message.text}"
-
-@pytest.mark.asyncio
-@patch('app.bots.telegram_bot.fetch_rss_articles')
-async def test_top_news(mock_fetch_articles):
-    mock_fetch_articles.return_value = [
-        {"title": f"Test Title {i}", "link": f"http://example.com/{i}"} for i in range(1, 11)
-    ]
-
-    dummy_message = DummyMessage()
-    dummy_update = Update(update_id=1234, message=dummy_message)
-    dummy_context = AsyncMock()
-
-    await telegram_bot.top_news(dummy_update, dummy_context)
-
-    assert len(dummy_message.sent_texts) == 3
-
-    assert "Test Title 1" in dummy_message.sent_texts[1]
-    assert "Test Title 6" in dummy_message.sent_texts[2]
-
-@pytest.mark.asyncio
 @patch('app.bots.telegram_bot.save_article_history')
 @patch('app.bots.telegram_bot.search_articles_by_topic')
 @patch('app.bots.telegram_bot.summarize_articles')
