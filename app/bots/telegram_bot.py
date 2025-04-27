@@ -1,6 +1,8 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
+from app.agents.rss_aggregator import fetch_rss_articles
+
 import os
 from dotenv import load_dotenv
 
@@ -14,8 +16,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def top_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🔍 Збираю топ новини для тебе...")
+    await update.message.reply_text("🔍 Fetching top news for you...")
 
+    articles = fetch_rss_articles(max_articles=3)
+
+    if not articles:
+        await update.message.reply_text("😔 Sorry, no news found.")
+        return
+
+    batch_message = ""
+    batch_size = 5
+
+    for idx, article in enumerate(articles, start=1):
+        batch_message += f"📰 *{article['title']}*\n[Read more]({article['link']})\n\n"
+
+        if idx % batch_size == 0 or idx == len(articles):
+            await update.message.reply_text(batch_message.strip(), parse_mode="Markdown")
+            batch_message = ""
 
 async def custom_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("✏️ Введи тему, яка тебе цікавить:")
