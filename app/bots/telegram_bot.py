@@ -3,6 +3,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Con
 
 from app.agents.topic_aggregator import search_articles_by_topic
 from app.agents.rss_aggregator import fetch_rss_articles
+from app.agents.summarizer import summarize_articles
 
 import os
 from dotenv import load_dotenv
@@ -45,10 +46,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         found_articles = search_articles_by_topic(topic)
 
         if not found_articles:
-            await update.message.reply_text(f"😔 Sorry, no articles found related to *{topic}*.", parse_mode="Markdown")
+            await update.message.reply_text(
+                f"😔 Sorry, no articles found related to *{topic}*.",
+                parse_mode="Markdown"
+            )
             return
 
-        await _send_articles_batch(update, found_articles)
+        summary = await summarize_articles(found_articles)
+
+        await update.message.reply_text(
+            f"📝 Here’s a short summary for *{topic}*:\n\n{summary}",
+            parse_mode="Markdown"
+        )
     else:
         await update.message.reply_text(
             "❓ Please use /top_news or /custom_topic."

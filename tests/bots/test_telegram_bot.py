@@ -54,10 +54,13 @@ async def test_top_news(mock_fetch_articles):
 
 @pytest.mark.asyncio
 @patch('app.bots.telegram_bot.search_articles_by_topic')
-async def test_custom_topic_flow(mock_search_articles):
+@patch('app.bots.telegram_bot.summarize_articles')
+async def test_custom_topic_flow(mock_summarize_articles, mock_search_articles):
     mock_search_articles.return_value = [
         {"title": "AI Innovations are changing the world", "link": "http://example.com/ai-news"}
     ]
+
+    mock_summarize_articles.return_value = "This is a summarized article about AI innovations."
 
     dummy_message = DummyMessage()
     dummy_update = Update(update_id=1234, message=dummy_message)
@@ -73,7 +76,7 @@ async def test_custom_topic_flow(mock_search_articles):
 
     await handle_message(dummy_update, dummy_context)
 
-    assert "AI Innovations" in dummy_message.sent_texts[-1]
-    assert "Read more" in dummy_message.sent_texts[-1]
+    assert "short summary" in dummy_message.sent_texts[-1]
+    assert "AI innovations" in dummy_message.sent_texts[-1]
 
     assert dummy_update.effective_user.id not in user_states
