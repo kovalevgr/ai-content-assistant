@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
+from app.agents.topic_aggregator import search_articles_by_topic
 from app.agents.rss_aggregator import fetch_rss_articles
 
 import os
@@ -25,15 +26,7 @@ async def top_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("😔 Sorry, no news found.")
         return
 
-    batch_message = ""
-    batch_size = 5
-
-    for idx, article in enumerate(articles, start=1):
-        batch_message += f"📰 *{article['title']}*\n[Read more]({article['link']})\n\n"
-
-        if idx % batch_size == 0 or idx == len(articles):
-            await update.message.reply_text(batch_message.strip(), parse_mode="Markdown")
-            batch_message = ""
+    await _send_articles_batch(update, articles)
 
 async def custom_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("📝 Please type the topic you are interested in:")
@@ -49,14 +42,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         topic = update.message.text
         user_states.pop(user_id, None)
 
-        await update.message.reply_text(
-            f"🔍 Here are articles related to *{topic}* (mock result)",
-            parse_mode="Markdown"
-        )
+        found_articles = search_articles_by_topic(topic)
+
+        if not found_articles:
+            await update.message.reply_text(f"😔 Sorry, no articles found related to *{topic}*.", parse_mode="Markdown")
+            return
+
+        await _send_articles_batch(update, found_articles)
     else:
         await update.message.reply_text(
             "❓ Please use /top_news or /custom_topic."
         )
+
+async def _send_articles_batch(update, articles: list, batch_size: int = 5):
+    batch_message = ""
+
+    for idx, article in enumerate(articles, start=1):
+        batch_message += f"📰 *{article['title']}*\n[Read more]({article['link']})\n\n"
+
+        if idx % batch_size == 0 or idx == len(articles):
+            await update.message.reply_text(batch_message.strip(), parse_mode="Markdown")
+            batch_message = ""
 
 def run_bot():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
