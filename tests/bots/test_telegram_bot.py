@@ -1,12 +1,17 @@
 import pytest
 from unittest.mock import AsyncMock, patch
 from telegram import Update
-from app.bots.telegram_bot import start, top_news
+from app.bots.telegram_bot import start, top_news, custom_topic, user_states, handle_message
+
+class DummyUser:
+    def __init__(self, user_id=123456):
+        self.id = user_id
 
 class DummyMessage:
     def __init__(self):
         self.text = None
         self.sent_texts = []
+        self.from_user = DummyUser()
 
     async def reply_text(self, text, **kwargs):
         self.text = text
@@ -47,3 +52,23 @@ async def test_top_news(mock_fetch_articles):
     assert "Test Title 1" in dummy_message.sent_texts[1]
     assert "Test Title 6" in dummy_message.sent_texts[2]
 
+@pytest.mark.asyncio
+async def test_custom_topic_flow():
+    dummy_message = DummyMessage()
+    dummy_update = Update(update_id=1234, message=dummy_message)
+    dummy_context = AsyncMock()
+
+    await custom_topic(dummy_update, dummy_context)
+
+    assert dummy_message.sent_texts[-1] == "📝 Please type the topic you are interested in:"
+    assert user_states[dummy_update.effective_user.id] == "awaiting_topic"
+
+    dummy_message.sent_texts = []
+    dummy_update.message.text = "AI innovations"
+
+    await handle_message(dummy_update, dummy_context)
+
+    assert "AI innovations" in dummy_message.sent_texts[-1]
+    assert "Here are articles related to" in dummy_message.sent_texts[-1]
+
+    assert dummy_update.effective_user.id not in user_states
