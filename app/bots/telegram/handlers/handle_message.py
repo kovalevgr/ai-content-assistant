@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from app.agents.image_generator import generate_images
 from app.agents.rewriter import rewrite_text
 from app.agents.summarizer import summarize_articles
 from app.agents.topic_aggregator import search_articles_by_topic
@@ -55,7 +56,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         articles = data["articles"]
 
         summary = await summarize_articles(articles)
-        rewritten_summary = await rewrite_text(summary, style=chosen_style)
+        images = await generate_images(topic)
+        rewritten_summary = await rewrite_text(summary, style=chosen_style, images=images)
 
         await update.message.reply_text(
             f"📝 Here’s a *{chosen_style.title()}* style article for *{topic}*:\n\n{rewritten_summary}",

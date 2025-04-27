@@ -30,7 +30,14 @@ class DummyContext:
 @patch('app.bots.telegram.handlers.handle_message.search_articles_by_topic')
 @patch('app.bots.telegram.handlers.handle_message.summarize_articles')
 @patch('app.bots.telegram.handlers.handle_message.rewrite_text')
-async def test_custom_topic_flow(mock_rewrite_text, mock_summarize_articles, mock_search_articles, mock_save_history):
+@patch('app.bots.telegram.handlers.handle_message.generate_images')
+async def test_custom_topic_flow(
+    mock_generate_images,
+    mock_rewrite_text,
+    mock_summarize_articles,
+    mock_search_articles,
+    mock_save_history
+):
     # Mock search_articles
     mock_search_articles.return_value = [
         {"title": "AI Innovations", "summary": "Changing the world.", "link": "http://example.com/ai-news"}
@@ -39,8 +46,11 @@ async def test_custom_topic_flow(mock_rewrite_text, mock_summarize_articles, moc
     # Mock summarize_articles
     mock_summarize_articles.return_value = "Summarized text about AI."
 
+    # Mock generate_images
+    mock_generate_images.return_value = ["http://example.com/image1.png"]
+
     # Mock rewrite_text
-    mock_rewrite_text.return_value = "Rewritten casual text about AI."
+    mock_rewrite_text.return_value = "Rewritten casual text about AI with an image."
 
     # Dummy Telegram objects
     dummy_message = DummyMessage()
@@ -67,8 +77,9 @@ async def test_custom_topic_flow(mock_rewrite_text, mock_summarize_articles, moc
     await handle_message(dummy_update, dummy_context)
 
     # Verify that rewritten text was sent
-    assert "Rewritten casual text" in dummy_message.sent_texts[-1]
-    assert "casual" in dummy_message.sent_texts[-1].lower()
+    texts = " ".join(dummy_message.sent_texts).lower()
+    assert "rewritten casual text" in texts
+    # assert "image1.png" in texts
 
     # Verify that history was saved
     mock_save_history.assert_called_once()

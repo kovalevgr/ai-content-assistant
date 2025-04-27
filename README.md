@@ -1,89 +1,89 @@
-
 # AI Content Assistant
 
-Your personal AI content assistant that helps you:
+Welcome to the **AI Content Assistant** project! 🚀
 
-- Find real articles based on your custom topics (via RSS feeds)
-- Summarize multiple articles into one
-- Rewrite the content into different styles (Professional, Casual, Emotional, Technical)
-- Save your article generation history in a PostgreSQL database
-- Operate via a friendly Telegram bot
+This bot helps you automatically generate article drafts from recent news, aggregate information on a custom topic, rewrite it in your style, and prepare it for publishing.
 
 ---
 
-## 🛠 Project Structure
+## Features
 
+- 📈 **Top News**: Get a summarized article based on trending topics.
+- 📅 **Custom Topic**: Request an article draft for your custom topic.
+- 📄 **History**: See your previously generated articles.
+- 🗓️ **Scheduling (Coming Soon)**: Schedule automatic generation of articles daily or weekly.
+
+---
+
+## Architecture
+
+```plaintext
+Telegram Bot
+    └── Commands
+        └── /top_news, /custom_topic, /history, etc.
+            └── Handlers
+                └── Logic for handling user inputs and generating articles
+    └── Agents
+        ├── Topic Aggregator (search_articles_by_topic)
+        ├── RSS Aggregator (fetch_rss_articles)
+        ├── Summarizer (summarize_articles)
+        └── Rewriter (rewrite_text)
+    └── DB
+        └── CRUD operations (save history, get history)
 ```
-/app
-  /agents         # AI-related agents (aggregator, summarizer, rewriter)
-  /bots           # Telegram bot logic
-  /db             # Database connection and CRUD operations
-  /models         # Database models (SQLAlchemy)
-  /scripts        # Helper scripts (e.g., database initialization)
-/docker
-  docker-compose.dev.yml   # Docker Compose for development
-  docker-compose.prod.yml  # Docker Compose for production
-```
 
 ---
 
-## 🚀 Features
+## Basic Flow
 
-| Feature | Status |
-|:--------|:-------|
-| Find articles by topic (RSS feeds) | ✅ |
-| Summarize articles with OpenAI | ✅ |
-| Rewrite content in various styles | ✅ |
-| Save request history (PostgreSQL) | ✅ |
-| Dockerized setup (Dev/Prod) | ✅ |
-| Unit-tested core flows | ✅ |
+![Content Generation Flow](docs/diagram.png)
+
+(You should save the corresponding image `architecture_flow.png` inside a `docs/` folder.)
 
 ---
 
-## ⚙️ How to Run
-
-### Local Development
+## Setup
 
 ```bash
-docker-compose -f docker-compose.dev.yml up -d
-python scripts/init_db.py
-python main.py
+git clone https://github.com/your-repo/ai-content-assistant.git
+cd ai-content-assistant
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-> Ensure you have a `.env` file with necessary environment variables:
->
-> - OPENAI_API_KEY
-> - OPENAI_MODEL
-> - OPENAI_TEMPERATURE
-> - OPENAI_MAX_TOKENS
-> - POSTGRES_USER
-> - POSTGRES_PASSWORD
-> - POSTGRES_DB
-> - POSTGRES_HOST
-> - POSTGRES_PORT
+Create `.env` file:
+
+```dotenv
+TELEGRAM_TOKEN=your-telegram-bot-token
+DATABASE_URL=your-database-url
+```
 
 ---
 
-### Production
+## Running Locally
 
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+python run_bot.py
 ```
 
-Make sure the production environment has all required environment variables set.
+Bot will be running and listening for Telegram commands!
 
 ---
 
-## ✅ How to Test
+## Testing
 
 ```bash
 pytest
 ```
 
-Unit tests mock external services and database interactions to ensure isolated, fast, and reliable tests.
+---
+
+## Next steps
+- [ ] Add Scheduled Articles (morning generation)
+- [ ] Allow direct feedback to refine generated articles
+- [ ] Add image/diagram generation based on article content
 
 ---
 
-## 📄 License
-
-MIT License.
+Made with ❤️ to boost your content creation journey!
