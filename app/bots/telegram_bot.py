@@ -4,6 +4,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Con
 from app.agents.topic_aggregator import search_articles_by_topic
 from app.agents.rss_aggregator import fetch_rss_articles
 from app.agents.summarizer import summarize_articles
+from app.agents.rewriter import rewrite_text
 
 import os
 from dotenv import load_dotenv
@@ -14,6 +15,7 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 # Simple in-memory user states
 user_states = {}
+user_temp_data = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привіт! Я твій AI Content Assistant! 🚀\nНапиши /top_news або /custom_topic")
@@ -38,26 +40,60 @@ async def topics(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
+    text = update.message.text
 
     if user_states.get(user_id) == "awaiting_topic":
-        topic = update.message.text
-        user_states.pop(user_id, None)
+        topic = text
+        user_states[user_id] = "awaiting_style"
 
         found_articles = search_articles_by_topic(topic)
+        user_temp_data[user_id] = {
+            "topic": topic,
+            "articles": found_articles
+        }
 
         if not found_articles:
             await update.message.reply_text(
                 f"😔 Sorry, no articles found related to *{topic}*.",
                 parse_mode="Markdown"
             )
+            user_states.pop(user_id, None)
+            user_temp_data.pop(user_id, None)
             return
 
-        summary = await summarize_articles(found_articles)
+        await update.message.reply_text(
+            "🖋️ Please choose a writing style:\n- Professional\n- Casual\n- Emotional\n- Technical",
+        )
+
+    elif user_states.get(user_id) == "awaiting_style":
+        chosen_style = text.strip().lower()
+        valid_styles = ["professional", "casual", "emotional", "technical"]
+
+        if chosen_style not in valid_styles:
+            await update.message.reply_text(
+                "❌ Invalid style. Please choose one of: Professional, Casual, Emotional, Technical."
+            )
+            return
+
+        data = user_temp_data.pop(user_id, None)
+        if not data:
+            await update.message.reply_text("⚠️ Something went wrong. Please try again with /custom_topic.")
+            user_states.pop(user_id, None)
+            return
+
+        topic = data["topic"]
+        articles = data["articles"]
+
+        summary = await summarize_articles(articles)
+        rewritten_summary = await rewrite_text(summary, style=chosen_style)
 
         await update.message.reply_text(
-            f"📝 Here’s a short summary for *{topic}*:\n\n{summary}",
+            f"📝 Here’s a *{chosen_style.title()}* style article for *{topic}*:\n\n{rewritten_summary}",
             parse_mode="Markdown"
         )
+
+        user_states.pop(user_id, None)
+
     else:
         await update.message.reply_text(
             "❓ Please use /top_news or /custom_topic."

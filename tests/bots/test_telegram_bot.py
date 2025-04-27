@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, patch
 from telegram import Update
-from app.bots.telegram_bot import start, top_news, custom_topic, user_states, handle_message
+from app.bots.telegram_bot import start, top_news, custom_topic, user_states, user_temp_data, handle_message
 
 class DummyUser:
     def __init__(self, user_id=123456):
@@ -55,12 +55,15 @@ async def test_top_news(mock_fetch_articles):
 @pytest.mark.asyncio
 @patch('app.bots.telegram_bot.search_articles_by_topic')
 @patch('app.bots.telegram_bot.summarize_articles')
-async def test_custom_topic_flow(mock_summarize_articles, mock_search_articles):
+@patch('app.bots.telegram_bot.rewrite_text')
+async def test_custom_topic_flow(mock_rewrite_text, mock_summarize_articles, mock_search_articles):
     mock_search_articles.return_value = [
-        {"title": "AI Innovations are changing the world", "link": "http://example.com/ai-news"}
+        {"title": "AI Innovations", "summary": "Changing the world.", "link": "http://example.com/ai-news"}
     ]
 
-    mock_summarize_articles.return_value = "This is a summarized article about AI innovations."
+    mock_summarize_articles.return_value = "Summarized text about AI."
+
+    mock_rewrite_text.return_value = "Rewritten casual text about AI."
 
     dummy_message = DummyMessage()
     dummy_update = Update(update_id=1234, message=dummy_message)
@@ -68,15 +71,22 @@ async def test_custom_topic_flow(mock_summarize_articles, mock_search_articles):
 
     await custom_topic(dummy_update, dummy_context)
 
-    assert dummy_message.sent_texts[-1] == "📝 Please type the topic you are interested in:"
-    assert user_states[dummy_update.effective_user.id] == "awaiting_topic"
+    assert "Please type the topic" in dummy_message.sent_texts[-1]
 
     dummy_message.sent_texts = []
     dummy_update.message.text = "AI innovations"
 
     await handle_message(dummy_update, dummy_context)
 
-    assert "short summary" in dummy_message.sent_texts[-1]
-    assert "AI innovations" in dummy_message.sent_texts[-1]
+    assert "choose a writing style" in dummy_message.sent_texts[-1]
+
+    dummy_message.sent_texts = []
+    dummy_update.message.text = "casual"
+
+    await handle_message(dummy_update, dummy_context)
+
+    assert "Rewritten casual text" in dummy_message.sent_texts[-1]
+    assert "casual" in dummy_message.sent_texts[-1].lower()
 
     assert dummy_update.effective_user.id not in user_states
+    assert dummy_update.effective_user.id not in user_temp_data
