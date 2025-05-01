@@ -3,9 +3,16 @@ import os
 from dotenv import load_dotenv
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, CallbackQueryHandler
 
-from app.bots.telegram.commands import start, top_news, custom_topic, topics, history
-from app.bots.telegram.handlers import handle_message, handle_topic_selection, handle_article_decision, \
-    handle_publish_decision
+from app.bots.telegram.commands.start import start
+from app.bots.telegram.commands.top_news import top_news
+from app.bots.telegram.commands.custom_topic import custom_topic
+from app.bots.telegram.commands.topics import topics
+from app.bots.telegram.commands.history import history
+
+from app.bots.telegram.handlers.handle_message import handle_message
+from app.bots.telegram.handlers.handle_topic_selection import handle_topic_selection
+from app.bots.telegram.handlers.handle_article_decision import handle_article_decision
+from app.bots.telegram.handlers.handle_publish_decision import handle_publish_decision
 
 load_dotenv()
 

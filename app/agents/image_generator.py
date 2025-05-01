@@ -1,11 +1,12 @@
 import os
-import openai
+from openai import AsyncOpenAI
 from typing import List
 
 from dotenv import load_dotenv
 load_dotenv()
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+aclient = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 async def generate_images(topic: str, num_images: int = 1, size: str = "1024x1024") -> List[str]:
     """
@@ -17,14 +18,14 @@ async def generate_images(topic: str, num_images: int = 1, size: str = "1024x102
     :return: List of URLs of the generated images
     """
     try:
-        response = await openai.Image.acreate(
+        response = await aclient.images.generate(
             prompt=f"Create an illustration or diagram related to: {topic}",
             n=num_images,
             size=size,
             model="dall-e-3"  # fallback to "dall-e-2" if necessary
         )
 
-        image_urls = [item["url"] for item in response["data"]]
+        image_urls = [item.url for item in response.data]
         return image_urls
 
     except Exception as e:

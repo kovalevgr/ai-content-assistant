@@ -1,56 +1,63 @@
 import os
-import openai
+from openai import AsyncOpenAI
 from typing import Optional, List
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+from dotenv import load_dotenv
+load_dotenv()
+
+aclient = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
 OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", 0.7))
 OPENAI_MAX_TOKENS = int(os.getenv("OPENAI_MAX_TOKENS", 500))
 
+MAX_INPUT_WORDS = 500
+
+def truncate_text(text: str, max_words: int) -> str:
+    return ' '.join(text.split()[:max_words])
+
 async def rewrite_text(text: str, style: str = "professional", images: Optional[List[str]] = None) -> str:
     """
-    Rewrite the given text in the specified style.
-    Optionally, embed image references into the text if provided.
+    Rewrite text in a specific style, optionally embedding image markers.
 
-    :param text: The original text to rewrite
-    :param style: The writing style ("professional", "casual", etc.)
-    :param images: Optional list of image URLs to embed into the text
-    :return: Rewritten text
+    :param text: Original input
+    :param style: Desired writing style
+    :param images: List of image URLs to reference
+    :return: Rewritten article
     """
+
     if not text:
-        return "No text provided for rewriting."
+        return "No text provided."
+
+    truncated_text = truncate_text(text, MAX_INPUT_WORDS)
 
     prompt = (
         f"Rewrite the following text in a {style} style. "
-        f"Make it engaging and natural. "
+        f"Keep it natural and easy to read.\n\n"
     )
 
     if images:
         prompt += (
-            "Also, suggest where the following images can be embedded to enhance the article:\n"
+            "Insert placeholders like [Image1], [Image2] at appropriate places in the text "
+            "to indicate where images could be shown. Here are the images:\n"
         )
-        for idx, img_url in enumerate(images, start=1):
-            prompt += f"- [Image{idx}]: {img_url}\n"
-        prompt += (
-            "Insert [Image1], [Image2], etc., into appropriate places in the rewritten text.\n"
-        )
+        for i, url in enumerate(images, start=1):
+            prompt += f"[Image{i}]: {url}\n"
 
-    prompt += f"\nOriginal text:\n{text}"
+    prompt += f"\nOriginal:\n{truncated_text}"
 
     try:
-        response = await openai.ChatCompletion.acreate(
-            model="gpt-4",
+        response = await aclient.chat.completions.create(
+            model=OPENAI_MODEL,
             messages=[
-                {"role": "system", "content": "You are an expert article editor."},
+                {"role": "system", "content": "You are a helpful and creative article editor."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7,
-            max_tokens=2000,
+            temperature=OPENAI_TEMPERATURE,
+            max_tokens=OPENAI_MAX_TOKENS,
         )
-        rewritten_text = response["choices"][0]["message"]["content"]
-        return rewritten_text.strip()
+        return response.choices[0].message.content.strip()
 
     except Exception as e:
-        print(f"Error rewriting text: {e}")
+        print(f"Rewrite error: {e}")
         return text

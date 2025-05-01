@@ -1,7 +1,11 @@
 import os
-import openai
+from openai import AsyncOpenAI
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+from dotenv import load_dotenv
+load_dotenv()
+
+aclient = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4")
 OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", 0.7))
@@ -22,7 +26,7 @@ async def summarize_articles(articles: list) -> str:
         f"Summarize the following information into a clear, concise, and engaging article:\n\n{combined_text}"
     )
 
-    response = await openai.ChatCompletion.acreate(
+    response = await aclient.chat.completions.create(
         model=OPENAI_MODEL,
         messages=[
             {"role": "system", "content": "You are a professional news summarizer."},
@@ -32,4 +36,4 @@ async def summarize_articles(articles: list) -> str:
         max_tokens=OPENAI_MAX_TOKENS,
     )
 
-    return response['choices'][0]['message']['content'].strip()
+    return response.choices[0].message.content.strip()
